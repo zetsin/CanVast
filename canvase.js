@@ -139,17 +139,12 @@
     View.prototype.render = function () {
         this._measure ();
         this._layout ();
-        if (this._visiable) {
-            this._draw ();
-        }
+        this._draw ();
     };
     View.prototype._default = function () {
         this._parent = this._parent || Default.parent (this._canvase);
         this._layouts = $.extend (true, {}, Default.layouts (), this._layouts);
         this._children = [];
-    };
-    View.prototype._visiable = function () {
-        return this._layouts.background !== undefined;
     };
     var FrameLayout = Class.create ();
     FrameLayout.prototype = View.prototype;
