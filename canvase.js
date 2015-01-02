@@ -271,15 +271,7 @@
             this._context = this._canvase.getContext ("2d");
         },
         _initManifest: function () {
-            var key,
-                main;
-            for (key in this._manifest) {
-                if (this._manifest[key].main === true) {
-                    main = this._manifest[key];
-                    break;
-                }
-            }
-            this._viewmain = this._parseView (main, undefined);
+            this._viewmain = this._parseView (this._manifest, undefined);
         },
         _parseView: function (manifest, parentView) {
             var func,
@@ -313,8 +305,7 @@
         window.CanVase = CanVase;
     }
 }) (window, document, Math);
-var sample = [{
-    main: true,
+var sample = {
     name: 'FrameLayout',
     layouts: {
         background: '#eff0f2',
@@ -334,7 +325,7 @@ var sample = [{
             }
         }
     }]
-}, {}];
+};
 setTimeout (function () {
     var canvas = document.createElement ('canvas');
     canvas.width = document.body.offsetWidth;
