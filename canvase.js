@@ -1,5 +1,5 @@
 (function (window, document, Math) {
-    $ = (function () {
+    var $ = (function () {
         var copyIsArray,
             toString = Object.prototype.toString,
             hasOwn = Object.prototype.hasOwnProperty;
@@ -200,15 +200,15 @@
         FrameLayout: function () {
             return $.extend (true, Structure.BaseLayout (), {
                 override: {
-                    measure: Override.MeasureFrameLayout,
-                    layout: Override.LayoutFrameLayout,
-                    draw: Override.DrawFrameLayout
+                    measure: 'MeasureFrameLayout',
+                    layout: 'LayoutFrameLayout',
+                    draw: 'DrawFrameLayout'
                 }
             });
         }
     };
     var View = function (canvase, context, parent, manifest) {
-        var structure;
+        var structure, key;
         this._canvase = canvase;
         this.context = context;
         this.parent = parent || {
@@ -228,7 +228,14 @@
         };
         structure = Structure[manifest.name || 'BaseLayout'] ();
         this.layouts = $.extend (true, {}, structure.layouts, manifest.layouts);
-        $.extend (true, this, structure.override, manifest.override);
+        $.extend(true, structure.override, manifest.override)
+        for(key in structure.override) {
+            if(typeof structure.override[key] == 'string') {
+                this[key] = Override[structure.override[key]];
+            } else if($.isFunction(structure.override[key])) {
+                this[key] = structure.override[key];
+            }
+        }
         this.children = [];
     };
     View.prototype.render = function () {
