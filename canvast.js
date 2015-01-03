@@ -220,21 +220,21 @@
             });
         }
     };
-    var View = function (canvast, canvas, context, parent, manifest) {
+    var View = function (canvast, parent, manifest) {
         var structure,
             key;
         this.canvast = canvast;
-        this.canvas = canvas;
-        this.context = context;
+        this.canvas = this.canvast._canvas;
+        this.context = this.canvast._context;
         this.parent = parent || {
-            widthInner: canvas.width,
-            heightInner: canvas.height,
-            width: canvas.width,
-            height: canvas.height,
-            widthOuter: canvas.width,
-            heightOuter: canvas.height,
-            clipWidth: canvas.width,
-            clipHeight: canvas.height,
+            widthInner: this.canvas.width,
+            heightInner: this.canvas.height,
+            width: this.canvas.width,
+            height: this.canvas.height,
+            widthOuter: this.canvas.width,
+            heightOuter: this.canvas.height,
+            clipWidth: this.canvas.width,
+            clipHeight: this.canvas.height,
             left: 0,
             top: 0,
             clipLeft: 0,
@@ -278,7 +278,7 @@
             var view,
                 child,
                 key;
-            view = new View (this, this._canvas, this._context, parentView, manifest);
+            view = new View (this, parentView, manifest);
             if (manifest.children !== undefined) {
                 for (key in manifest.children) {
                     child = this._parseView (manifest.children[key], view);
