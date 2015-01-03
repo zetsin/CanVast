@@ -92,6 +92,12 @@
         };
     }) ();
     var Override = {
+        RenderLayout: function () {
+            this._image = this.context.getImageData (0, 0, this.canvas.width, this.canvas.height);
+            ! $.isFunction (this.measure) || this.measure ();
+            ! $.isFunction (this.layout) || this.layout ();
+            ! $.isFunction (this.draw) || this.draw ();
+        },
         MeasureFrameLayout: function () {
             var width = 0,
                 height = 0,
@@ -206,6 +212,7 @@
         FrameLayout: function () {
             return $.extend (true, Structure.BaseLayout (), {
                 override: {
+                    render: 'RenderLayout',
                     measure: 'MeasureFrameLayout',
                     layout: 'LayoutFrameLayout',
                     draw: 'DrawFrameLayout'
@@ -213,20 +220,21 @@
             });
         }
     };
-    var View = function (canvast, context, parent, manifest) {
+    var View = function (canvast, canvas, context, parent, manifest) {
         var structure,
             key;
-        this._canvast = canvast;
+        this.canvast = canvast;
+        this.canvas = canvas;
         this.context = context;
         this.parent = parent || {
-            widthInner: canvast.width,
-            heightInner: canvast.height,
-            width: canvast.width,
-            height: canvast.height,
-            widthOuter: canvast.width,
-            heightOuter: canvast.height,
-            clipWidth: canvast.width,
-            clipHeight: canvast.height,
+            widthInner: canvas.width,
+            heightInner: canvas.height,
+            width: canvas.width,
+            height: canvas.height,
+            widthOuter: canvas.width,
+            heightOuter: canvas.height,
+            clipWidth: canvas.width,
+            clipHeight: canvas.height,
             left: 0,
             top: 0,
             clipLeft: 0,
@@ -246,15 +254,9 @@
         }
         this.children = [];
     };
-    View.prototype.render = function () {
-        this._image = this.context.getImageData (0, 0, this._canvast.width, this._canvast.height);
-        ! $.isFunction (this.measure) || this.measure ();
-        ! $.isFunction (this.layout) || this.layout ();
-        ! $.isFunction (this.draw) || this.draw ();
-    };
     function CanVast (element, manifest) {
-        this.canvast = typeof element == 'string' ? document.querySelector (element) : element;
-        this.context = this.canvast.getContext ("2d");
+        this.canvas = typeof element == 'string' ? document.querySelector (element) : element;
+        this.context = this.canvas.getContext ("2d");
         this._manifest = {};
         $.extend (true, this._manifest, manifest);
         this._initcanvast ();
@@ -264,10 +266,10 @@
     CanVast.prototype = {
         version: '1.0.1',
         _initcanvast: function () {
-            this._canvast = document.createElement ("canvas");
-            this._canvast.width = this.canvast.width;
-            this._canvast.height = this.canvast.height;
-            this._context = this._canvast.getContext ("2d");
+            this._canvas = document.createElement ("canvas");
+            this._canvas.width = this.canvas.width;
+            this._canvas.height = this.canvas.height;
+            this._context = this._canvas.getContext ("2d");
         },
         _initManifest: function (manifest) {
             this._viewroot = this._parseView (manifest, undefined);
@@ -276,7 +278,7 @@
             var view,
                 child,
                 key;
-            view = new View (this._canvast, this._context, parentView, manifest);
+            view = new View (this, this._canvas, this._context, parentView, manifest);
             if (manifest.children !== undefined) {
                 for (key in manifest.children) {
                     child = this._parseView (manifest.children[key], view);
@@ -289,7 +291,7 @@
         },
         _render: function () {
             this._viewroot.render ();
-            this.context.drawImage (this._canvast, 0, 0);
+            this.context.drawImage (this._canvas, 0, 0);
         }
     };
     if (typeof module != 'undefined' && module.exports) {
