@@ -81,215 +81,199 @@
             return target;
         };
         return {
-            extend: extend
+            extend: extend,
+            isFunction: isFunction
         };
     }) ();
-    var Class = {
-        create: function () {
-            return function () {
-                this.ini.apply (this, arguments);
-            };
+    var Override = {
+        MeasureFrameLayout: function () {
+            var width = 0,
+                height = 0,
+                w,
+                h,
+                key;
+            if (typeof this.layouts.width == 'number' && this.layouts.width >= 0) {
+                this.widthOuter = this.layouts.width;
+            }
+            else if (this.layouts.width == 'match_parent' && this.parent.layouts.width == 'wrap_content') {
+                this.layouts.width = 'wrap_content';
+            }
+            else if (this.layouts.width != 'wrap_content') {
+                this.widthOuter = this.parent.widthInner;
+            }
+            if (this.layouts.width != 'wrap_content') {
+                this.width = this.widthOuter - this.layouts.margin.left - this.layouts.margin.right;
+                this.widthInner = this.width - this.layouts.padding.left - this.layouts.padding.right;
+            }
+            if (typeof this.layouts.height == 'number' && this.layouts.height >= 0) {
+                this.heightOuter = this.layouts.height;
+            }
+            else if (this.layouts.height == 'match_parent' && this.parent.layouts.height == 'wrap_content') {
+                this.layouts.height = 'wrap_content';
+            }
+            else if (this.layouts.height != 'wrap_content') {
+                this.heightOuter = this.parent.heightInner;
+            }
+            if (this.layouts.height != 'wrap_content') {
+                this.height = this.heightOuter - this.layouts.margin.top - this.layouts.margin.bottom;
+                this.heightInner = this.height - this.layouts.padding.top - this.layouts.padding.bottom;
+            }
+            for (key in this.children) {
+                this.children[key].measure ();
+            }
+            if (this.layouts.width == 'wrap_content') {
+                for (key in this.children) {
+                    w = this.children[key].widthOuter;
+                    width = w > width ? w : width;
+                }
+                this.widthOuter = width;
+                this.width = this.widthOuter - this.layouts.margin.left - this.layouts.margin.right;
+                this.widthInner = this.width - this.layouts.padding.left - this.layouts.padding.right;
+            }
+            if (this.layouts.height == 'wrap_content') {
+                for (key in this.children) {
+                    h = this.children[key].heightOuter;
+                    height = h > height ? h : height;
+                }
+                this.heightOuter = height;
+                this.height = this.heightOuter - this.layouts.margin.top - this.layouts.margin.bottom;
+                this.heightInner = this.height - this.layouts.padding.top - this.layouts.padding.bottom;
+            }
+        },
+        LayoutFrameLayout: function () {
+            var cw,
+                cwp,
+                ch,
+                chp,
+                key;
+            this.left = this.parent.left + this.parent.layouts.padding.left + this.layouts.margin.left;
+            this.top = this.parent.top + this.parent.layouts.padding.top + this.layouts.margin.top;
+            this.clipLeft = this.left > this.parent.clipLeft ? this.left : this.parent.clipLeft;
+            this.clipTop = this.top > this.parent.clipTop ? this.top : this.parent.clipTop;
+            cw = this.left + this.width - this.clipLeft;
+            cwp = this.parent.left + this.parent.width - this.clipLeft;
+            this.clipWidth = cw < cwp ? cw : cwp;
+            ch = this.top + this.height - this.clipTop;
+            chp = this.parent.top + this.parent.height - this.clipTop;
+            this.clipHeight = ch < chp ? ch : chp;
+            for (key in this.children) {
+                this.children[key].layout ();
+            }
+        },
+        DrawFrameLayout: function () {
+            var key;
+            this.context.save ();
+            this.context.rect (this.clipLeft, this.clipTop, this.clipWidth, this.clipHeight);
+            this.context.clip ();
+            this.context.fillStyle = this.layouts.background;
+            this.context.fillRect (this.left, this.top, this.width, this.height);
+            this.context.restore ();
+            for (key in this.children) {
+                this.children[key].draw ();
+            }
         }
     };
-    var Default = {
-        box: function () {
+    var Structure = {
+        BaseLayout: function () {
             return {
-                left: 0,
-                top: 0,
-                right: 0,
-                bottom: 0
+                layouts: {
+                    weight: 0,
+                    width: 'match_parent',
+                    height: 'match_parent',
+                    background: '#ffffff',
+                    padding: {
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0
+                    },
+                    margin: {
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0
+                    }
+                },
+                override: {}
             };
         },
-        layouts: function () {
-            return {
-                weight: 0,
-                width: 'match_parent',
-                height: 'match_parent',
-                background: '#ffffff',
-                padding: Default.box (),
-                margin: Default.box ()
-            };
-        },
-        parent: function (canvase) {
-            return {
-                _widthInner: canvase.width,
-                _heightInner: canvase.height,
-                _width: canvase.width,
-                _height: canvase.height,
-                _widthOuter: canvase.width,
-                _heightOuter: canvase.height,
-                _clipWidth: canvase.width,
-                _clipHeight: canvase.height,
-                _left: 0,
-                _top: 0,
-                _clipLeft: 0,
-                _clipTop: 0,
-                _layouts: Default.layouts ()
-            };
+        FrameLayout: function () {
+            return $.extend (true, Structure.BaseLayout (), {
+                override: {
+                    measure: Override.MeasureFrameLayout,
+                    layout: Override.LayoutFrameLayout,
+                    draw: Override.DrawFrameLayout
+                }
+            });
         }
     };
-    var View = Class.create ();
-    View.prototype.ini = function (canvase, context, parent, layouts) {
+    var View = function (canvase, context, parent, manifest) {
+        var structure;
         this._canvase = canvase;
-        this._context = context;
-        this._parent = parent;
-        this._layouts = layouts;
-        this._default ();
+        this.context = context;
+        this.parent = parent || {
+            widthInner: canvase.width,
+            heightInner: canvase.height,
+            width: canvase.width,
+            height: canvase.height,
+            widthOuter: canvase.width,
+            heightOuter: canvase.height,
+            clipWidth: canvase.width,
+            clipHeight: canvase.height,
+            left: 0,
+            top: 0,
+            clipLeft: 0,
+            clipTop: 0,
+            layouts: Structure.BaseLayout ().layouts
+        };
+        structure = Structure[manifest.name || 'BaseLayout'] ();
+        this.layouts = $.extend (true, {}, structure.layouts, manifest.layouts);
+        $.extend (true, this, structure.override, manifest.override);
+        this.children = [];
     };
     View.prototype.render = function () {
-        this._measure ();
-        this._layout ();
-        this._draw ();
-    };
-    View.prototype._default = function () {
-        this._parent = this._parent || Default.parent (this._canvase);
-        this._layouts = $.extend (true, {}, Default.layouts (), this._layouts);
-        this._children = [];
-    };
-    var FrameLayout = Class.create ();
-    FrameLayout.prototype = View.prototype;
-    FrameLayout.prototype._measure = function () {
-        var width = 0,
-            height = 0,
-            w,
-            h,
-            key;
-        if (typeof this._layouts.width == 'number' && this._layouts.width >= 0) {
-            this._widthOuter = this._layouts.width;
-        }
-        else if (this._layouts.width == 'match_parent' && this._parent._layouts.width == 'wrap_content') {
-            this._layouts.width = 'wrap_content';
-        }
-        else if (this._layouts.width != 'wrap_content') {
-            this._widthOuter = this._parent._widthInner;
-        }
-        if (this._layouts.width != 'wrap_content') {
-            this._width = this._widthOuter - this._layouts.margin.left - this._layouts.margin.right;
-            this._widthInner = this._width - this._layouts.padding.left - this._layouts.padding.right;
-        }
-        if (typeof this._layouts.height == 'number' && this._layouts.height >= 0) {
-            this._heightOuter = this._layouts.height;
-        }
-        else if (this._layouts.height == 'match_parent' && this._parent._layouts.height == 'wrap_content') {
-            this._layouts.height = 'wrap_content';
-        }
-        else if (this._layouts.height != 'wrap_content') {
-            this._heightOuter = this._parent._heightInner;
-        }
-        if (this._layouts.height != 'wrap_content') {
-            this._height = this._heightOuter - this._layouts.margin.top - this._layouts.margin.bottom;
-            this._heightInner = this._height - this._layouts.padding.top - this._layouts.padding.bottom;
-        }
-        for (key in this._children) {
-            this._children[key]._measure ();
-        }
-        if (this._layouts.width == 'wrap_content') {
-            for (key in this._children) {
-                w = this._children[key]._widthOuter;
-                width = w > width ? w : width;
-            }
-            this._widthOuter = width;
-            this._width = this._widthOuter - this._layouts.margin.left - this._layouts.margin.right;
-            this._widthInner = this._width - this._layouts.padding.left - this._layouts.padding.right;
-        }
-        if (this._layouts.height == 'wrap_content') {
-            for (key in this._children) {
-                h = this._children[key]._heightOuter;
-                height = h > height ? h : height;
-            }
-            this._heightOuter = height;
-            this._height = this._heightOuter - this._layouts.margin.top - this._layouts.margin.bottom;
-            this._heightInner = this._height - this._layouts.padding.top - this._layouts.padding.bottom;
-        }
-    };
-    FrameLayout.prototype._layout = function () {
-        var cw,
-            cwp,
-            ch,
-            chp,
-            key;
-        this._left = this._parent._left + this._parent._layouts.padding.left + this._layouts.margin.left;
-        this._top = this._parent._top + this._parent._layouts.padding.top + this._layouts.margin.top;
-        this._clipLeft = this._left > this._parent._clipLeft ? this._left : this._parent._clipLeft;
-        this._clipTop = this._top > this._parent._clipTop ? this._top : this._parent._clipTop;
-        cw = this._left + this._width - this._clipLeft;
-        cwp = this._parent._left + this._parent._width - this._clipLeft;
-        this._clipWidth = cw < cwp ? cw : cwp;
-        ch = this._top + this._height - this._clipTop;
-        chp = this._parent._top + this._parent._height - this._clipTop;
-        this._clipHeight = ch < chp ? ch : chp;
-        for (key in this._children) {
-            this._children[key]._layout ();
-        }
-    };
-    FrameLayout.prototype._draw = function () {
-        this._image = this._context.getImageData (0, 0, this._canvase.width, this._canvase.height);
-        this._doDraw ();
-    };
-    FrameLayout.prototype._reDraw = function () {
-        this._context.putImageData (this._image, 0, 0);
-        this._doDraw ();
-    };
-    FrameLayout.prototype._doDraw = function () {
-        var key;
-        this._context.save ();
-        this._context.rect (this._clipLeft, this._clipTop, this._clipWidth, this._clipHeight);
-        this._context.clip ();
-        this._context.fillStyle = this._layouts.background;
-        this._context.fillRect (this._left, this._top, this._width, this._height);
-        this._context.restore ();
-        for (key in this._children) {
-            this._children[key]._draw ();
-        }
-    };
-    var Views = {
-        'FrameLayout': FrameLayout
+        this._image = this.context.getImageData (0, 0, this._canvase.width, this._canvase.height);
+        ! $.isFunction (this.measure) || this.measure ();
+        ! $.isFunction (this.layout) || this.layout ();
+        ! $.isFunction (this.draw) || this.draw ();
     };
     function CanVase (element, manifest) {
         this.canvase = typeof element == 'string' ? document.querySelector (element) : element;
         this.context = this.canvase.getContext ("2d");
         this._manifest = {};
         $.extend (true, this._manifest, manifest);
-        this._init ();
+        this._initCanvase ();
+        this._initManifest (manifest);
         this._render ();
     }
     CanVase.prototype = {
         version: '1.0.1',
-        _init: function () {
-            this._initCanvase ();
-            this._initManifest ();
-        },
         _initCanvase: function () {
             this._canvase = document.createElement ("canvas");
             this._canvase.width = this.canvase.width;
             this._canvase.height = this.canvase.height;
             this._context = this._canvase.getContext ("2d");
         },
-        _initManifest: function () {
-            this._viewmain = this._parseView (this._manifest, undefined);
+        _initManifest: function (manifest) {
+            this._viewroot = this._parseView (manifest, undefined);
         },
         _parseView: function (manifest, parentView) {
-            var func,
-                view,
+            var view,
                 child,
                 key;
-            func = Views[manifest.name];
-            if (func === undefined) {
-                return;
-            }
-            view = new func (this._canvase, this._context, parentView, manifest.layouts);
+            view = new View (this._canvase, this._context, parentView, manifest);
             if (manifest.children !== undefined) {
                 for (key in manifest.children) {
                     child = this._parseView (manifest.children[key], view);
                     if (child !== undefined) {
-                        view._children.push (child);
+                        view.children.push (child);
                     }
                 }
             }
             return view;
         },
         _render: function () {
-            this._viewmain.render ();
+            this._viewroot.render ();
             this.context.drawImage (this._canvase, 0, 0);
         }
     };
@@ -321,10 +305,12 @@ var sample = {
         }
     }]
 };
-setTimeout (function () {
+onload = function () {
+    document.documentElement.style.cssText = 'width: 100%; height: 100%;';
+    document.body.style.cssText = 'width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden;';
     var canvas = document.createElement ('canvas');
-    canvas.width = document.body.offsetWidth;
+    canvas.width = document.body.clientWidth;
     canvas.height = document.body.offsetHeight;
     document.body.appendChild (canvas);
     var canvase = new CanVase (canvas, sample);
-}, 1000);
+};
