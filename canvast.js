@@ -2,8 +2,8 @@
     var $ = (function () {
         var copyIsArray,
             toString = Object.prototype.toString,
-            hasOwn = Object.prototype.hasOwnProperty;
-        class2type = {
+            hasOwn = Object.prototype.hasOwnProperty,
+            class2type = {
             '[object Boolean]': 'boolean',
             '[object Number]': 'number',
             '[object String]': 'string',
@@ -12,15 +12,20 @@
             '[object Date]': 'date',
             '[object RegExp]': 'regExp',
             '[object Object]': 'object'
-        }, type = function (obj) {
+        },
+            type = function (obj) {
             return obj === null ? String (obj) : class2type[toString.call (obj)] || "object";
-        }, isWindow = function (obj) {
+        },
+            isWindow = function (obj) {
             return obj && typeof obj === "object" && "setInterval" in obj;
-        }, isFunction = function (obj) {
+        },
+            isFunction = function (obj) {
             return type (obj) === "function";
-        }, isArray = Array.isArray || function (obj) {
+        },
+            isArray = Array.isArray || function (obj) {
             return type (obj) === "array";
-        }, isPlainObject = function (obj) {
+        },
+            isPlainObject = function (obj) {
             if (! obj || type (obj) !== "object" || obj.nodeType || isWindow (obj)) {
                 return false;
             }
@@ -31,7 +36,8 @@
             for (key in obj) {
             }
             return key === undefined || hasOwn.call (obj, key);
-        }, extend = function () {
+        },
+            extend = function () {
             var options,
                 name,
                 src,
@@ -207,19 +213,20 @@
             });
         }
     };
-    var View = function (canvase, context, parent, manifest) {
-        var structure, key;
-        this._canvase = canvase;
+    var View = function (canvast, context, parent, manifest) {
+        var structure,
+            key;
+        this._canvast = canvast;
         this.context = context;
         this.parent = parent || {
-            widthInner: canvase.width,
-            heightInner: canvase.height,
-            width: canvase.width,
-            height: canvase.height,
-            widthOuter: canvase.width,
-            heightOuter: canvase.height,
-            clipWidth: canvase.width,
-            clipHeight: canvase.height,
+            widthInner: canvast.width,
+            heightInner: canvast.height,
+            width: canvast.width,
+            height: canvast.height,
+            widthOuter: canvast.width,
+            heightOuter: canvast.height,
+            clipWidth: canvast.width,
+            clipHeight: canvast.height,
             left: 0,
             top: 0,
             clipLeft: 0,
@@ -228,38 +235,39 @@
         };
         structure = Structure[manifest.name || 'BaseLayout'] ();
         this.layouts = $.extend (true, {}, structure.layouts, manifest.layouts);
-        $.extend(true, structure.override, manifest.override)
-        for(key in structure.override) {
-            if(typeof structure.override[key] == 'string') {
+        $.extend (true, structure.override, manifest.override);
+        for (key in structure.override) {
+            if (typeof structure.override[key] == 'string') {
                 this[key] = Override[structure.override[key]];
-            } else if($.isFunction(structure.override[key])) {
+            }
+            else if ($.isFunction (structure.override[key])) {
                 this[key] = structure.override[key];
             }
         }
         this.children = [];
     };
     View.prototype.render = function () {
-        this._image = this.context.getImageData (0, 0, this._canvase.width, this._canvase.height);
+        this._image = this.context.getImageData (0, 0, this._canvast.width, this._canvast.height);
         ! $.isFunction (this.measure) || this.measure ();
         ! $.isFunction (this.layout) || this.layout ();
         ! $.isFunction (this.draw) || this.draw ();
     };
-    function CanVase (element, manifest) {
-        this.canvase = typeof element == 'string' ? document.querySelector (element) : element;
-        this.context = this.canvase.getContext ("2d");
+    function CanVast (element, manifest) {
+        this.canvast = typeof element == 'string' ? document.querySelector (element) : element;
+        this.context = this.canvast.getContext ("2d");
         this._manifest = {};
         $.extend (true, this._manifest, manifest);
-        this._initCanvase ();
+        this._initcanvast ();
         this._initManifest (manifest);
         this._render ();
     }
-    CanVase.prototype = {
+    CanVast.prototype = {
         version: '1.0.1',
-        _initCanvase: function () {
-            this._canvase = document.createElement ("canvas");
-            this._canvase.width = this.canvase.width;
-            this._canvase.height = this.canvase.height;
-            this._context = this._canvase.getContext ("2d");
+        _initcanvast: function () {
+            this._canvast = document.createElement ("canvas");
+            this._canvast.width = this.canvast.width;
+            this._canvast.height = this.canvast.height;
+            this._context = this._canvast.getContext ("2d");
         },
         _initManifest: function (manifest) {
             this._viewroot = this._parseView (manifest, undefined);
@@ -268,7 +276,7 @@
             var view,
                 child,
                 key;
-            view = new View (this._canvase, this._context, parentView, manifest);
+            view = new View (this._canvast, this._context, parentView, manifest);
             if (manifest.children !== undefined) {
                 for (key in manifest.children) {
                     child = this._parseView (manifest.children[key], view);
@@ -281,14 +289,14 @@
         },
         _render: function () {
             this._viewroot.render ();
-            this.context.drawImage (this._canvase, 0, 0);
+            this.context.drawImage (this._canvast, 0, 0);
         }
     };
     if (typeof module != 'undefined' && module.exports) {
-        module.exports = CanVase;
+        module.exports = CanVast;
     }
     else {
-        window.CanVase = CanVase;
+        window.CanVast = CanVast;
     }
 }) (window, document, Math);
 var sample = {
@@ -304,7 +312,7 @@ var sample = {
         layouts: {
             width: 'match_parent',
             height: 100,
-            background: '#e74c3c',
+            background: '#1abc9c',
             margin: {
                 left: 50,
                 right: 50
@@ -319,5 +327,5 @@ onload = function () {
     canvas.width = document.body.clientWidth;
     canvas.height = document.body.offsetHeight;
     document.body.appendChild (canvas);
-    var canvase = new CanVase (canvas, sample);
+    var canVast = new CanVast (canvas, sample);
 };
